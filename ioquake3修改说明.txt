@@ -1,0 +1,58 @@
+1、在Makefile 316行，删掉无关信息，以免编译错误，删除后结果为：
+ifeq ($(ARCH),arm)
+    BASE_CFLAGS += -DPANDORA -I$(PNDSDK)/usr/include
+    OPTIMIZE += -O3 -ftree-vectorize -ffast-math -fomit-frame-pointer -fno-strict-aliasing -fsingle-precision-constant
+    SDL_CFLAGS=`$(PNDSDK)/usr/bin/sdl-config --cflags`
+    SDL_LIBS=`$(PNDSDK)/usr/bin/sdl-config --libs`
+    BASE_CFLAGS += -I$(PNDSDK)/usr/include/EGL/ -I$(PNDSDK)/usr/include/GLES/
+    OPTIMIZEVM = -O3 -ftree-vectorize -ffast-math -fomit-frame-pointer -fno-strict-aliasing -fsingle-precision-constant
+endif
+
+2、在Makefile 340行，添加-lGLESv2 -lEGL，添加后如下：
+ ifeq ($(ARCH),arm)
+    CLIENT_LIBS = $(SDL_LIBS) -lGLESv1_CM -lX11 -lGLESv2 -lEGL
+  endif
+
+3、在./code/qcommon/q_platform.h文件的第169行，添加如下代码：
+#define ARCH_STRING "arm"
+
+4、在Makefile文件的开始处添加和修改为如下：
+COMPILE_PLATFORM=$(shell uname | sed -e 's/_.*//' | tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
+COMPILE_ARCH=$(shell uname -m | sed -e 's/i.86/x86/' | sed -e 's/^arm.*/arm/')
+
+#arm64 hack!
+ifeq ($(shell uname -m), arm64)
+  COMPILE_ARCH=arm
+endif
+ifeq ($(shell uname -m), aarch64)
+  COMPILE_ARCH=arm
+endif
+
+5、修改./code/qcommon/q_shared.h文件的第29行，如下代码：
+#ifndef STANDALONE
+
+6、新建ioquake3-gles文件夹
+mkdir /usr/lib/ioquake3-gles/
+7、拷贝baseq3中所有文件到ioquake3-gles中
+cp -r /home/sietium/XYGPU/quake3-back/baseq3 /usr/lib/ioquake3-gles/
+
+6、开始编译
+make clean
+make -j8
+
+7、执行quake3
+cd /home/sietium/XYGPU/
+source sourceme
+cd /home/sietium/XYGPU/ioquake3-gles/
+sudo bash copybaseq3.sh
+bash build/release-linux-arm/ioquake3.arm
+
+8、鼠标键盘焦点设置
+查看有哪些输入设备
+ls /dev/input/event*
+在/root/.q3a/baseq3/q3config.cfg文件中添加鼠标和键盘焦点
+seta usbk "4"  #这里具体的数据需要根据设备试
+sete usbm "3"
+
+
+
